@@ -12,7 +12,7 @@
 
   ativar butões
 
-  baseado em delais ???
+  verificação do tempo para piscar led
 
 */
 // Constantes pisca várias vezes
@@ -32,17 +32,44 @@ int mode = 0; //identifica o modo de funcionamento
 // modo 1; modo especia
 
 
+//variavei de input
 int input_status; // estado das intradas
-int repete = 3;
 
+// variaveis de outpu
+
+int repete ; // numero repetições
+
+// variaveis controlo
+unsigned long previousMillis = 0; // contador de tempo anterior
+unsigned long currentMillis = 0; // contador de tempo
+
+int conta_pisca_azul = 3;
+int interval = 1000; // intervalo para mudar estado
+
+
+// estado atuadores
+int estao_placa;
+int estado_azul;
+int estado_vermelho;
 
 //Lista de Funcoes
 
 //Ler parametros de input
 // funcao que le os sensores
 void get_sensor() {
-  // read the state of the BUTAO value:
+  // read the state of the BUTAO value - led vermelho toma esse valor
   input_status = digitalRead(BUTAO);
+  if (input_status == HIGH) {
+    estado_vermelho = LOW;
+  }
+  else
+  {
+    estado_vermelho = HIGH;
+
+  }
+  digitalWrite(LED_VERMELHO, estado_vermelho);
+
+  delay(50);
 
 }
 
@@ -77,23 +104,37 @@ void setup() {
   pinMode(LED_AZUL, OUTPUT);
   pinMode(LED_VERMELHO, OUTPUT);
   pinMode(BUTAO, INPUT);
+
+
+  estao_placa = LOW;
+  estado_azul = LOW;
+  estado_vermelho = LOW;
+
+  // inicializa atuadores led
+  digitalWrite(LED_PLACA, estao_placa);
+  digitalWrite(LED_AZUL, estado_azul);
+  digitalWrite(LED_VERMELHO, estado_vermelho);
+
+  // initialize serial communication:
+  Serial.begin(9600);
+
 }
 
 // the loop function runs over and over again forever
 void loop() {
 
+
+
   // le o estado do sensores
   get_sensor();
-
 
   // muda o mode
   mode_calc();
 
-
-  //
-
+  // valida o estado
   if (mode == 1) {
     repete = 1;
+
   }
   else
   {
@@ -101,24 +142,55 @@ void loop() {
   }
 
 
-  for (int i = 1; i <= repete; i++)
-  {
-    digitalWrite(LED_AZUL, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(tempo);                       // wait for a second
-    digitalWrite(LED_AZUL, LOW);    // turn the LED off by making the voltage LOW
-    delay(tempo);                       // wait for a second
 
+  //
+  currentMillis = millis(); // atualiza o tempo
+
+  // verifica se o tempo passou para  executar alterações estados
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    Serial.print("diff: ");
+    Serial.println(currentMillis - previousMillis);
+    previousMillis = currentMillis;
+
+    Serial.print("Mode: ");
+    Serial.println(mode);
+
+    Serial.print("Milies: ");
+    Serial.println(currentMillis);
+
+    Serial.print("Estado Azul: ");
+    Serial.println(estado_azul);
+
+    Serial.print("Conta pisca azul ");
+    Serial.println(conta_pisca_azul);
+
+
+    Serial.print("intervalo ");
+    Serial.println(interval);
+    Serial.println();
+
+    if (conta_pisca_azul > 0 ) {
+      interval = 250;
+     
+
+      if (estado_azul == LOW) {
+        estado_azul = HIGH;
+      } else {
+        estado_azul = LOW;
+         conta_pisca_azul--;
+      }
+    }
+    else
+    {
+      estado_azul = LOW;
+      interval = 1000;
+      conta_pisca_azul = repete;
+
+    }
   }
-  delay(1000);    
-  //  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  //  delay(250);                       // wait for a second
-  //  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  //  delay(100);                       // wait for a second
-  //  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  //  delay(250);
-  //digitalWrite(LED_AZUL, LOW);    // turn the LED off by making the voltage LOW
-  //delay(1000);                       // wait for a second
- 
+  digitalWrite(LED_AZUL, estado_azul);
+
 
 
 }
